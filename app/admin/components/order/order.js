@@ -130,7 +130,7 @@ export default function OrderComponent() {
     }
   };
   const filteredOrders = orders.filter((order) =>
-    order.order_id.toLowerCase().includes(searchTerm.toLowerCase())
+    order.order_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -202,7 +202,7 @@ export default function OrderComponent() {
                   <th className="border px-4 py-2">Order ID</th>
                   <th className="border px-4 py-2">Email</th>
                   <th className="border px-4 py-2">Mobile</th>
-                  <th className="border px-4 py-2">Product ID</th>
+              {/* <th className="border px-4 py-2">Product ID</th> */}
                   <th className="border px-4 py-2">Price</th>
                   <th className="border px-4 py-2">Order Status</th>
                   <th className="border px-4 py-2">Action</th>
@@ -210,13 +210,14 @@ export default function OrderComponent() {
                 </tr>
               </thead>
               <tbody>
+  
                 {paginatedOrders.map((order) => (
                   <tr key={order._id} className="text-center border">
-                    <td className="border px-4 py-2">{order.order_id}</td>
+                    <td className="border px-4 py-2">{order.order_number}</td>
                     <td className="border px-4 py-2">{order.email_address}</td>
-                    <td className="border px-4 py-2">{order.mobile_number}</td>
-                    <td className="border px-4 py-2">{order.product_id}</td>
-                    <td className="border px-4 py-2">{order.price}</td>
+                    <td className="border px-4 py-2">{order.order_phonenumber}</td>
+                 
+                    <td className="border px-4 py-2">{order.order_amount}</td>
                     <td className="border px-4 py-2">{order.order_status}</td>
                     <td className="px-4 py-2 flex space-x-2">
                       {activeTab === "pending" && (

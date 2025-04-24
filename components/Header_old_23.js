@@ -1,8 +1,9 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser } from "react-icons/fi";
+import { FiSearch, FiMapPin, FiHeart, FiShoppingCart, FiUser, FiMenu, FiX } from "react-icons/fi";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Logout from "@/components/Logout";
 import { useWishlist } from "@/context/WishlistContext";
@@ -10,6 +11,7 @@ import { useCart } from '@/context/CartContext';
 
 export default function Header() {
   const scrollRef = useRef(null);
+  const autoScrollInterval = useRef(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -25,9 +27,46 @@ export default function Header() {
   const [loadingAuth, setLoadingAuth] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
-  //const { wishlistCount } = useWishlist();
-  const { cartCount, updateCartCount,clearCart  } = useCart();
-  const { wishlistCount,clearWishlist } = useWishlist();
+  const { wishlistCount } = useWishlist();
+  const { cartCount, updateCartCount } = useCart();
+  const intervalRef = useRef(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = scrollRef.current.clientWidth / 2;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const startAutoScroll = () => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    intervalRef.current = setInterval(() => {
+      scrollContainer.scrollBy({ left: 1, behavior: 'smooth' });
+      if (
+        scrollContainer.scrollLeft + scrollContainer.clientWidth >=
+        scrollContainer.scrollWidth
+      ) {
+        scrollContainer.scrollTo({ left: 0, behavior: 'smooth' });
+      }
+    }, 20);
+  };
+
+  const stopAutoScroll = () => {
+    clearInterval(intervalRef.current);
+  };
+
+  useEffect(() => {
+    startAutoScroll();
+    return () => stopAutoScroll();
+  }, []);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -44,6 +83,24 @@ export default function Header() {
 
     fetchCategories();
     checkAuthStatus();
+  }, []);
+
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+  
+    const scrollInterval = setInterval(() => {
+      if (
+        scrollContainer.scrollLeft + scrollContainer.clientWidth >=
+        scrollContainer.scrollWidth
+      ) {
+        scrollContainer.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        scrollContainer.scrollBy({ left: 150, behavior: 'smooth' });
+      }
+    }, 3000);
+  
+    return () => clearInterval(scrollInterval);
   }, []);
 
   const checkAuthStatus = async () => {
@@ -72,18 +129,6 @@ export default function Header() {
     }
   };
 
-
-
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = scrollRef.current.clientWidth / 2;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
-  };
-
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
@@ -106,7 +151,6 @@ export default function Header() {
         throw new Error(data.message || 'Something went wrong');
       }
 
-      // On successful login/register
       localStorage.setItem('token', data.token);
       setIsLoggedIn(true);
       setUserData(data.user);
@@ -128,16 +172,15 @@ export default function Header() {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
     setUserData(null);
-    clearCart();
-    clearWishlist();
   };
+
   useEffect(() => {
     const fetchCartCount = async () => {
       try {
-        const token = localStorage.getItem('token'); // Get the token
+        const token = localStorage.getItem('token');
         const response = await fetch('/api/cart/count', {
           headers: {
-            'Authorization': `Bearer ${token}` // Include the token in headers
+            'Authorization': `Bearer ${token}`
           }
         });
         if (response.ok) {
@@ -150,66 +193,233 @@ export default function Header() {
     };
   
     fetchCartCount();
-  }, [updateCartCount]); // Keep the dependency
+  }, [updateCartCount]);
 
   return (
     <header className="w-full">
-      {/* Main Header */}
-      <div className="relative py-2 border-b border-gray-300 bg-white text-black">
-        <div className="container mx-auto flex items-center justify-between px-4">
-          {/* Logo */}
-          <Link href="/index">
-            <Image src="/user/bea.png" alt="Marketpro" width={70} height={30} className="h-auto" />
+      {/* Mobile Top Bar */}
+      <div className="lg:hidden bg-white text-black border-b border-gray-200">
+        <div className="container mx-auto px-2 py-2 flex items-center justify-between">
+          {/* Menu Button */}
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2"
+          >
+            {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+          </button>
+
+          {/* Logo - Centered */}
+          <Link href="/index" className="mx-auto">
+            <Image src="/user/bea.png" alt="Marketpro" width={60} height={30} className="h-auto" />
           </Link>
 
-          {/* Search Bar & Location */}
-          <div className="flex-1 flex justify-center items-center space-x-10">
+          {/* Icons - Search, Wishlist, Cart */}
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => setShowSearch(!showSearch)}
+              className="p-2"
+            >
+              <FiSearch size={20} />
+            </button>
+            
+            <Link href="/wishlist" className="relative p-2">
+              <FiHeart size={20} />
+              {wishlistCount > 0 && (
+                <span className="absolute top-0 right-0 text-xs bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+            
+            <Link href="/cart" className="relative p-2">
+              <FiShoppingCart size={20} />
+              {cartCount > 0 && (
+                <span className="absolute top-0 right-0 text-xs bg-customBlue text-white rounded-full w-4 h-4 flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile Search Bar - appears when toggled */}
+        {showSearch && (
+          <div className="px-3 pb-3">
             <div className="flex items-center border border-gray-300 rounded-full px-3 bg-white">
               <input
                 type="text"
-                placeholder="Search for a product or brand"
-                className="px-4 py-2 outline-none w-72 text-black placeholder:text-gray-400"
+                placeholder="Search for products..."
+                className="px-4 py-2 outline-none w-full text-black placeholder:text-gray-400"
               />
               <button className="bg-customBlue text-white p-2 rounded-full">
                 <FiSearch size={18} />
               </button>
             </div>
-
-            {/* Location */}
-            <Link href="/locator" className="flex items-center relative px-2">
-              <FiMapPin size={22} className="text-black" />
-              <span className="ml-2 hidden md:inline font-bold">Location</span>
-            </Link>
-
-            {/* Wishlist */}
-            <Link href="/wishlist" className="flex items-center relative px-4">
-              <FiHeart size={22} className="text-black" />
-              {wishlistCount > 0 && (
-          <span className="absolute -top-2 -right-2 text-xs bg-red-500 text-white px-1 rounded-full">
-            {wishlistCount}
-          </span>
-        )}
-              <span className="ml-2 hidden md:inline font-bold">Wishlist</span>
-            </Link>
-
-            {/* Cart */}
-            <Link href="/cart" className="flex items-center relative px-4">
-              <FiShoppingCart size={22} className="text-black" />
-              <span className="absolute top-[-5px] right-[-8px] text-xs bg-customBlue text-white rounded-full w-5 h-5 flex items-center justify-center">
-              {cartCount}
-              </span>
-              <span className="ml-2 hidden md:inline font-bold">Cart</span>
-            </Link>
           </div>
+        )}
 
-          {/* User Account */}
-          {/* User Account */}
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="absolute top-full left-0 w-full bg-white z-50 shadow-lg border-t border-gray-200">
+            <div className="container mx-auto px-4 py-3">
+              {/* User Section */}
+              <div className="pb-3 border-b border-gray-200">
+                {isLoggedIn ? (
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <FiUser size={18} />
+                    </div>
+                    <div>
+                      <p className="font-medium">Hi, {userData?.username || userData?.name || 'User'}</p>
+                      <Link href="/account" className="text-sm text-blue-500">My Account</Link>
+                    </div>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setShowAuthModal(true);
+                    }}
+                    className="flex items-center space-x-3"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <FiUser size={18} />
+                    </div>
+                    <span className="font-medium">Sign In / Register</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="py-3 border-b border-gray-200">
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/" className="block py-2 font-medium" onClick={() => setMobileMenuOpen(false)}>Home</Link>
+                  </li>
+                  <li>
+                    <Link href="/locator" className="block py-2 font-medium" onClick={() => setMobileMenuOpen(false)}>
+                      <div className="flex items-center">
+                        <FiMapPin className="mr-2" /> Location
+                      </div>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/wishlist" className="block py-2 font-medium" onClick={() => setMobileMenuOpen(false)}>
+                      <div className="flex items-center">
+                        <FiHeart className="mr-2" /> Wishlist
+                        {wishlistCount > 0 && (
+                          <span className="ml-auto text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full">
+                            {wishlistCount}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                  {isLoggedIn && (
+                    <>
+                      <li>
+                        <Link href="/orders" className="block py-2 font-medium" onClick={() => setMobileMenuOpen(false)}>My Orders</Link>
+                      </li>
+                      <li>
+                        <button 
+                          onClick={() => {
+                            handleLogout();
+                            setMobileMenuOpen(false);
+                          }}
+                          className="block py-2 font-medium text-left w-full"
+                        >
+                          Logout
+                        </button>
+                      </li>
+                    </>
+                  )}
+                </ul>
+              </nav>
+
+              {/* Categories Section */}
+              <div className="py-3">
+                <h3 className="font-bold text-lg mb-2">Categories</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {loading ? (
+                    [...Array(4)].map((_, i) => (
+                      <div key={i} className="h-10 bg-gray-200 animate-pulse rounded"></div>
+                    ))
+                  ) : (
+                    categories.slice(0, 6).map(category => (
+                      <Link
+                        key={category._id}
+                        href={`/category/${category.category_slug}`}
+                        className="block py-2 px-3 bg-gray-100 rounded hover:bg-gray-200 text-sm"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {category.category_name}
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden lg:block">
+        {/* Main Header */}
+        <div className="relative py-2 border-b border-gray-300 bg-white text-black">
+          <div className="container mx-auto flex items-center justify-between px-4">
+            {/* Logo */}
+            <Link href="/index">
+              <Image src="/user/bea.png" alt="Marketpro" width={70} height={30} className="h-auto" />
+            </Link>
+
+            {/* Search Bar & Location */}
+            <div className="flex-1 flex justify-center items-center space-x-10">
+              <div className="flex items-center border border-gray-300 rounded-full px-3 bg-white">
+                <input
+                  type="text"
+                  placeholder="Search for a product or brand"
+                  className="px-4 py-2 outline-none w-72 text-black placeholder:text-gray-400"
+                />
+                <button className="bg-customBlue text-white p-2 rounded-full">
+                  <FiSearch size={18} />
+                </button>
+              </div>
+
+              {/* Location */}
+              <Link href="/locator" className="flex items-center relative px-2">
+                <FiMapPin size={22} className="text-black" />
+                <span className="ml-2 font-bold">Location</span>
+              </Link>
+
+              {/* Wishlist */}
+              <Link href="/wishlist" className="flex items-center relative px-4">
+                <FiHeart size={22} className="text-black" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-2 -right-2 text-xs bg-red-500 text-white px-1 rounded-full">
+                    {wishlistCount}
+                  </span>
+                )}
+                <span className="ml-2 font-bold">Wishlist</span>
+              </Link>
+
+              {/* Cart */}
+              <Link href="/cart" className="flex items-center relative px-4">
+                <FiShoppingCart size={22} className="text-black" />
+                <span className="absolute top-[-5px] right-[-8px] text-xs bg-customBlue text-white rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartCount}
+                </span>
+                <span className="ml-2 font-bold">Cart</span>
+              </Link>
+            </div>
+
+            {/* User Account */}
             <div className="flex items-center space-x-10">
               {isLoggedIn ? (
                 <div className="relative group">
                   <button className="flex items-center text-black">
                     <FiUser size={22} className="text-black" />
-                    <span className="ml-2 hidden md:inline font-bold">
+                    <span className="ml-2 font-bold">
                       Hi, {userData?.username || userData?.name || 'User'}
                     </span>
                   </button>
@@ -234,23 +444,25 @@ export default function Header() {
                   className="flex items-center text-black"
                 >
                   <FiUser size={22} className="text-black" />
-                  <span className="ml-2 hidden md:inline font-bold">Sign In</span>
+                  <span className="ml-2 font-bold">Sign In</span>
                 </button>
               )}
             </div>
+          </div>
         </div>
       </div>
 
-      {/* Top Blue Bar */}
-      <div className="bg-customBlue text-white text-xs py-4 relative">
-        {/* <button
+      {/* Categories Bar (visible on all screens) */}
+      <div className="overflow-hidden bg-customBlue text-white text-xs py-4 relative" onMouseEnter={stopAutoScroll} onMouseLeave={startAutoScroll}>
+        <button
           className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white text-customBlue p-2 rounded-full shadow-md z-10"
           onClick={() => scroll("left")}
         >
           <ChevronLeft size={20} />
-        </button> */}
+        </button>
 
         <div
+          style={{ overflowX: "auto", whiteSpace: "nowrap" }}
           ref={scrollRef}
           className="container mx-auto flex overflow-x-auto scroll-smooth scrollbar-hide gap-4 px-6 header-css"
         >
@@ -290,12 +502,12 @@ export default function Header() {
           )}
         </div>
 
-        {/* <button
+        <button
           className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white text-customBlue p-2 rounded-full shadow-md z-10"
           onClick={() => scroll("right")}
         >
           <ChevronRight size={20} />
-        </button> */}
+        </button>
       </div>
 
       {/* Auth Modal */}

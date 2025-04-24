@@ -665,7 +665,7 @@ export default function HomeComponent() {
   animate={isInView.flashSales ? "visible" : "hiddenDown"}
   variants={sectionVariants}
   id="flash-sales-section" 
-  className="mb-16" // Consistent bottom margin
+  className="mb-12" // Consistent bottom margin
 >
   {flashSalesData.filter(item => item.bgImage && item.productImage).length > 0 && (
     <div className="container mx-auto px-4">
@@ -775,9 +775,9 @@ export default function HomeComponent() {
           initial={scrollDirection === 'down' ? "hiddenDown" : "hiddenUp"}
           animate={isInView.delivery ? "visible" : scrollDirection === 'down' ? "hiddenDown" : "hiddenUp"}
           variants={sectionVariants}
-          className="mb-16 bg-gray-100 rounded-[23px] py-8" // Consistent bottom margin and padding
+          className="mb-12 bg-gray-100 rounded-[23px] py-8" // Consistent bottom margin and padding
         >
-          <div className="mx-auto p-6">
+          <div className="mx-auto p-1">
           <motion.div variants={containerVariants} className="rounded-lg">
             <motion.div variants={itemVariants} className="flex justify-between items-center mb-4">
               <h5 className="text-lg font-semibold">Shop by Brands</h5>
@@ -823,7 +823,7 @@ export default function HomeComponent() {
         {/* Recommended Products Section */}
       
 
-        <section className="mb-16"> {/* Consistent bottom margin */}
+        <section className="mb-12"> {/* Consistent bottom margin */}
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-bold mb-8">Recommended for you</h2>
 
@@ -953,7 +953,7 @@ export default function HomeComponent() {
 
              {/* Hot Deals Section - Showing only parent categories */}
                 <motion.section className="hot-deals pt-15  mb-10 bg-gray-100">
-              <div className="container mx-auto px-4">
+              <div className="container mx-auto px-4 p-4">
                 {/* Section Header */}
                 <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
                   <h5 className="text-2xl font-bold">Hot Deals Today</h5>
@@ -985,11 +985,11 @@ export default function HomeComponent() {
                 <div className="flex flex-row gap-6">
                   {/* Left Tab */}
                   <div className="w-1/4 min-w-[250px] bg-green-600 text-white p-6 rounded-lg flex flex-col justify-center items-center">
-                    <h3 className="text-3xl font-bold mb-7 text-center">Large Appliances</h3>
+                    <h3 className="text-3xl font-bold mb-7 text-center">Air Conditioner</h3>
                     <div className="w-full h-40 flex items-center justify-center my-4">
                       <Image
                         src="/user/large app.jpg"
-                        alt="Large Appliances"
+                        alt="Air Conditioner"
                         width={100}
                         height={100}
                         className="object-contain"
@@ -1018,14 +1018,14 @@ export default function HomeComponent() {
                             productCategory &&
                             (productCategory.category_name
                               .toLowerCase()
-                              .includes("large appliance") ||
+                              .includes("Air Conditioner") ||
                               (productCategory.parentid !== "none" &&
                                 categories.some(
                                   (parentCat) =>
                                     parentCat._id === productCategory.parentid &&
                                     parentCat.category_name
                                       .toLowerCase()
-                                      .includes("large appliance")
+                                      .includes("Air Conditioner")
                                 )))
                           );
                         })

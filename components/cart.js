@@ -98,7 +98,7 @@ export default function CartComponent() {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
-                    router.push('/login');
+                    // router.push('/login');
                     return;
                 }
 
